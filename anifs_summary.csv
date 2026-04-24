@@ -1,0 +1,2 @@
+controller,test_rmse,test_mae,test_r2,safe_landing_pct,n_rules,epochs_trained,learning_rate,train_rows,test_rows,note
+ANFIS,0.160073,0.10816,0.999397,98.8,27,150,0.005,7200,2000,ANFIS learns non-linear wind-altitude-velocity interactions. Tuned Gaussian MFs adapt premise parameters via backprop. 27 Sugeno rules extracted and saved to extracted_rules.txt.

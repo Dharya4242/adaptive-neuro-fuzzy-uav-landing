@@ -342,95 +342,49 @@ print("COMPARISON: PID vs ANFIS")
 print("─" * 60)
 print(compare.to_string(index=False))
 
-compare.to_csv("comparison_results_updated.csv", index=False)
-print("\n✓ comparison_results_updated.csv saved")
+compare.to_csv("comparison_results_previous.csv", index=False)
+print("\n✓ comparison_results_previous.csv saved")
 
 # ─────────────────────────────────────────────
-# 8. RULE EXTRACTION (Sugeno-style with coefficients)
+# 8. RULE EXTRACTION
 # ─────────────────────────────────────────────
 print("\n" + "─" * 60)
-print("EXTRACTED FUZZY IF-THEN RULES (Sugeno 1st-order)")
+print("EXTRACTED FUZZY IF-THEN RULES")
 print("─" * 60)
 
-def interpret_sugeno_rule(coeffs):
-    """
-    Interpret Sugeno coefficients: [w_alt, w_vel, w_wind, bias]
-    Returns human-readable behavior description.
-    """
-    w_alt, w_vel, w_wind, bias = coeffs
-    
-    # Describe each coefficient's effect
-    effects = []
-    
-    if abs(w_alt) > 0.1:
-        if w_alt > 0:
-            effects.append("↑ altitude → ↑ thrust")
-        else:
-            effects.append("↑ altitude → ↓ thrust")
-    
-    if abs(w_vel) > 0.1:
-        if w_vel > 0:
-            effects.append("↑ velocity → ↑ thrust")
-        else:
-            effects.append("↑ velocity → ↓ thrust")
-    
-    if abs(w_wind) > 0.1:
-        if w_wind > 0:
-            effects.append("↑ wind → ↑ thrust")
-        else:
-            effects.append("↑ wind → ↓ thrust")
-    
-    behavior = ", ".join(effects) if effects else "constant thrust"
-    
-    # Base thrust level
+def dominant_consequent(r_params_row):
+    """Return a linguistic label for the Sugeno output."""
+    bias = r_params_row[3]
     thr_mid = (thr_min + thr_max) / 2
-    if bias < thr_mid * 0.8:
-        level = "Low base"
-    elif bias < thr_mid * 1.2:
-        level = "Medium base"
+    if bias < thr_mid * 0.85:
+        return "Low Thrust Boost"
+    elif bias < thr_mid * 1.15:
+        return "Medium Thrust Boost"
     else:
-        level = "High base"
-    
-    return f"{level} ({behavior})"
+        return "High Thrust Boost"
 
 rules_text = []
 r = 0
 for i in range(3):
     for j in range(3):
         for k in range(3):
-            w_alt, w_vel, w_wind, bias = rule_params[r]
-            
-            # Simplified rule (linguistic labels)
-            simple = (
-                f"Rule {r+1:02d}: IF Altitude={MF_LABELS[i]:6s} AND "
-                f"Velocity={MF_LABELS[j]:6s} AND Wind={MF_LABELS[k]:6s}"
+            conseq_label = dominant_consequent(rule_params[r])
+            rule = (
+                f"Rule {r+1:02d}: IF Altitude is {MF_LABELS[i]:6s} "
+                f"AND Velocity is {MF_LABELS[j]:6s} "
+                f"AND Wind is {MF_LABELS[k]:6s} "
+                f"THEN Thrust = {conseq_label}"
             )
-            
-            # Sugeno formula
-            formula = (
-                f"         THEN Thrust = {w_alt:+.3f}·alt {w_vel:+.3f}·vel "
-                f"{w_wind:+.3f}·wind {bias:+.3f}"
-            )
-            
-            # Interpretation
-            interpret = f"         ({interpret_sugeno_rule(rule_params[r])})"
-            
-            rule_full = f"{simple}\n{formula}\n{interpret}"
-            rules_text.append(rule_full)
-            print("  " + simple)
-            print("  " + formula)
-            print("  " + interpret)
-            print()
+            rules_text.append(rule)
+            print("  " + rule)
             r += 1
 
-with open("extracted_rules_updated.txt", "w") as f:
+with open("extracted_rules_previous.txt", "w") as f:
     f.write("ANFIS EXTRACTED FUZZY RULES — UAV Landing Controller\n")
-    f.write("=" * 60 + "\n")
-    f.write("Format: Sugeno 1st-order — Thrust = w0·altitude + w1·velocity + w2·wind + bias\n")
     f.write("=" * 60 + "\n\n")
     for rule in rules_text:
-        f.write(rule + "\n\n")
-print("✓ extracted_rules_updated.txt saved (with Sugeno coefficients)")
+        f.write(rule + "\n")
+print("\n✓ extracted_rules_previous.txt saved")
 
 # ─────────────────────────────────────────────
 # 9. PLOTS
@@ -507,8 +461,8 @@ ax7.set_ylabel("Thrust Adjustment (%)")
 ax7.legend()
 ax7.grid(True, alpha=0.3)
 
-plt.savefig("phase2b_results_updated.png", dpi=150, bbox_inches="tight")
-print("✓ phase2b_results_updated.png saved")
+plt.savefig("phase2b_results_previous.png", dpi=150, bbox_inches="tight")
+print("✓ phase2b_results_previous.png saved")
 
 # ── Plot 8: Comparison bar chart ────────────
 fig2, axes = plt.subplots(1, 3, figsize=(12, 4))
@@ -529,8 +483,8 @@ for ax, (title, vals), bcolors in zip(axes, metrics, bar_colors):
     ax.set_ylim(min(0, min(vals)) * 1.3, max(vals) * 1.4)
 
 plt.tight_layout()
-plt.savefig("comparison_chart_updated.png", dpi=150, bbox_inches="tight")
-print("✓ comparison_chart_updated.png saved")
+plt.savefig("comparison_chart_previous.png", dpi=150, bbox_inches="tight")
+print("✓ comparison_chart_previous.png saved")
 
 # ─────────────────────────────────────────────
 # 10. SAVE FULL RESULTS SUMMARY
@@ -549,19 +503,19 @@ summary = {
     "note": (
         "ANFIS learns non-linear wind-altitude-velocity interactions. "
         "Tuned Gaussian MFs adapt premise parameters via backprop. "
-        "27 Sugeno rules extracted and saved to extracted_rules_updated.txt."
+        "27 Sugeno rules extracted and saved to extracted_rules_previous.txt."
     )
 }
-pd.DataFrame([summary]).to_csv("phase2b_summary_updated.csv", index=False)
-print("✓ phase2b_summary_updated.csv saved")
+pd.DataFrame([summary]).to_csv("phase2b_summary_previous.csv", index=False)
+print("✓ phase2b_summary_previous.csv saved")
 
 print("\n" + "=" * 60)
 print("PHASE 2B COMPLETE")
 print("=" * 60)
 print("\nFiles generated:")
-print("  phase2b_results_updated.png    — training curves, MFs, prediction plots")
-print("  comparison_chart_updated.png   — PID vs ANFIS bar chart")
-print("  comparison_results_updated.csv — metrics comparison table")
-print("  extracted_rules_updated.txt    — 27 human-readable IF-THEN rules")
-print("  phase2b_summary_updated.csv    — single-row results for Phase 3")
+print("  phase2b_results_previous.png    — training curves, MFs, prediction plots")
+print("  comparison_chart_previous.png   — PID vs ANFIS bar chart")
+print("  comparison_results_previous.csv — metrics comparison table")
+print("  extracted_rules_previous.txt    — 27 human-readable IF-THEN rules")
+print("  phase2b_summary_previous.csv    — single-row results for Phase 3")
 print()
