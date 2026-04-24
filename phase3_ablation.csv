@@ -1,0 +1,3 @@
+Model,Test RMSE,Wind Input
+ANFIS (Full 3-input),0.1601,Enabled
+ANFIS (Ablated: No Wind),0.1555,Zeroed

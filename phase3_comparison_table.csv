@@ -1,0 +1,5 @@
+Metric,PID,ANFIS
+RMSE (thrust prediction),5.349,0.160
+Safe landing rate (%),100.0%,98.8%
+Avg response to gust (s),nan,2.10
+Explainability,None,IF-THEN rules

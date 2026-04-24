@@ -1,0 +1,3 @@
+| Controller | Test RMSE | Test MAE | Test R² | Safe Landing % | # Rules | Epochs Trained | Learning Rate | Train Rows | Test Rows | Note |
+|------------|-----------|----------|---------|----------------|---------|----------------|---------------|------------|-----------|------|
+| ANFIS | 0.160073 | 0.10816 | 0.999397 | 98.8% | 27 | 150 | 0.005 | 7200 | 2000 | ANFIS learns non-linear wind-altitude-velocity interactions. Tuned Gaussian MFs adapt premise parameters via backprop. 27 Sugeno rules extracted and saved to `extracted_rules.txt`. |
