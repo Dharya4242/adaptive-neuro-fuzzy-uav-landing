@@ -1,0 +1,2 @@
+metric,t_statistic,p_value,significant,cohen_d,effect_size,anfis_rmse_ci_lower,anfis_rmse_ci_upper,pid_rmse_ci_lower,pid_rmse_ci_upper
+MAE Difference (PID - ANFIS),91.29459362072744,0.0,Yes,2.041919716896825,Large,0.1749971551564856,0.19865950457844414,16.88841587993083,17.730977985343976
