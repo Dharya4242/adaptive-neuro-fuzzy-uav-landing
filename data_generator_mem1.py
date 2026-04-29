@@ -70,16 +70,17 @@ def generate_correlated_wind(duration_steps, dt, wind_scale=2.0, correlation_tau
 # DRONE DYNAMICS
 # ============================================================================
 
-def simulate_landing(initial_altitude, controller_fn, num_steps=1000, dt=DT):
+def simulate_landing(initial_altitude, controller_fn, num_steps=1000, dt=DT, initial_velocity=0.0):
     """
     Simulate a single drone landing scenario.
-    
+
     Args:
         initial_altitude: starting height (m)
         controller_fn: function that takes (altitude, velocity, wind) and returns thrust (N)
         num_steps: simulation steps
         dt: time step (s)
-    
+        initial_velocity: starting descent speed (m/s), default 0
+
     Returns:
         arrays: altitude, velocity, wind, thrust, thrust_adjustment (ground truth label)
     """
@@ -88,52 +89,53 @@ def simulate_landing(initial_altitude, controller_fn, num_steps=1000, dt=DT):
     wind = np.zeros(num_steps)
     thrust = np.zeros(num_steps)
     thrust_adjustment = np.zeros(num_steps)
-    
+
     # Initial conditions
     altitude[0] = initial_altitude
-    velocity[0] = 0.0
-    
+    velocity[0] = float(initial_velocity)
+
     # Generate wind for this scenario
-    wind_signal = generate_correlated_wind(num_steps, dt, wind_scale=2.0, correlation_tau=0.5)
+    # Three wind regimes so ANFIS trains on the full 0-15 m/s range.
+    # The low-pass filter suppresses variance, so we compensate with a base offset.
+    regime = np.random.randint(3)
+    if regime == 0:          # calm (0-3 m/s)
+        wind_signal = generate_correlated_wind(num_steps, dt, wind_scale=2.0, correlation_tau=0.5)
+    elif regime == 1:        # moderate (3-8 m/s)
+        wind_signal = np.clip(
+            generate_correlated_wind(num_steps, dt, wind_scale=3.0, correlation_tau=0.5) + 4.0,
+            0, 15)
+    else:                    # gusty (6-12 m/s)
+        wind_signal = np.clip(
+            generate_correlated_wind(num_steps, dt, wind_scale=3.0, correlation_tau=0.5) + 8.0,
+            0, 15)
     wind[:] = wind_signal
-    
+
+    landing_step = num_steps  # track where landing occurs
+
     # Simulate
     for t in range(num_steps - 1):
         # Get controller output: desired thrust adjustment
         desired_thrust = controller_fn(altitude[t], velocity[t], wind[t])
         thrust[t] = desired_thrust
-        
-        # Compute ground truth: what thrust adjustment *should* be needed
-        # to keep descent velocity safe (PD-law correction)
-        altitude_error = altitude[t]  # how far from ground
-        velocity_error = velocity[t] - SAFE_LANDING_VELOCITY  # excess descent speed
-        
-        # Desired thrust = weight + correction for safe landing
-        weight = DRONE_MASS * GRAVITY
-        kp_true, kd_true = 0.5, 0.3  # true controller gains
-        thrust_adjustment[t] = weight + kp_true * altitude_error + kd_true * velocity_error
-        
+
+        # Label = actual controller thrust (consistent with the dynamics that produced this row)
+        thrust_adjustment[t] = desired_thrust
+
         # Update dynamics
-        # Net force = thrust - weight
+        weight = DRONE_MASS * GRAVITY
         net_force = desired_thrust - weight
         accel = net_force / DRONE_MASS
-        
+
         # Simple Euler integration
         velocity[t+1] = velocity[t] + accel * dt
-        altitude[t+1] = altitude[t] - velocity[t] * dt  # negative because descent
-        
+        altitude[t+1] = altitude[t] - velocity[t] * dt  # positive velocity = descending
+
         # Stop if hit ground
         if altitude[t+1] <= 0:
-            altitude[t+1] = 0
-            velocity[t+1] = 0
-            # Pad remaining with zeros
-            altitude[t+1:] = 0
-            velocity[t+1:] = 0
-            thrust[t+1:] = weight  # hover at ground
-            thrust_adjustment[t+1:] = weight
+            landing_step = t + 1
             break
-    
-    return altitude, velocity, wind, thrust, thrust_adjustment
+
+    return altitude, velocity, wind, thrust, thrust_adjustment, landing_step
 
 
 # ============================================================================
@@ -141,34 +143,40 @@ def simulate_landing(initial_altitude, controller_fn, num_steps=1000, dt=DT):
 # ============================================================================
 
 def naive_controller(altitude, velocity, wind):
-    """
-    Naive constant-thrust controller.
-    Good for generating easy scenarios; ANFIS should beat this.
-    """
+    """Naive constant-thrust controller (hover)."""
     return DRONE_MASS * GRAVITY
 
 
 def pd_controller(altitude, velocity, wind):
-    """
-    PD controller: thrust = weight + P*altitude + D*velocity
-    More realistic baseline for scenarios.
-    """
+    """PD controller with negative velocity feedback."""
     kp = 0.6
     kd = 0.4
     weight = DRONE_MASS * GRAVITY
-    return weight + kp * altitude - kd * velocity  # negative d-term because descent is negative velocity
+    return weight + kp * altitude - kd * velocity
 
 
 def smart_controller(altitude, velocity, wind):
-    """
-    Smart PD with wind compensation.
-    Uses wind to anticipate gust effects.
-    """
+    """PD with wind feed-forward."""
     kp = 0.7
     kd = 0.5
-    kw = 0.1  # wind feed-forward gain
+    kw = 0.1
     weight = DRONE_MASS * GRAVITY
     return weight + kp * altitude - kd * velocity + kw * wind
+
+
+def safety_pd_controller(altitude, velocity, wind):
+    """
+    Safety controller matching Phase 3 PID steady-state behavior.
+    Cascaded: target_vel = clip(Ka*alt, v_min, v_max), then P on velocity error.
+    Produces safe landings (touchdown < 0.5 m/s) and includes wind feed-forward.
+    Gains mirror the safety-tuned PID in phase3_evaluation.py.
+    """
+    Ka, Kp, Kw = 0.18, 7.0, 0.15
+    v_min, v_max = 0.3, 5.5
+    weight = DRONE_MASS * GRAVITY
+    vel_target = float(np.clip(Ka * altitude, v_min, v_max))
+    thrust = weight - Kp * (velocity - vel_target) + Kw * wind
+    return float(np.clip(thrust, 0.0, 3.0 * weight))
 
 
 # ============================================================================
@@ -176,10 +184,10 @@ def smart_controller(altitude, velocity, wind):
 # ============================================================================
 
 def generate_stable_landing_scenario(num_steps=500):
-    """Ideal scenario: high altitude, light wind."""
-    altitude, velocity, wind, thrust, thrust_adj = simulate_landing(
+    """Ideal scenario: high altitude, calm wind."""
+    altitude, velocity, wind, thrust, thrust_adj, _ = simulate_landing(
         initial_altitude=45.0,
-        controller_fn=pd_controller,
+        controller_fn=safety_pd_controller,
         num_steps=num_steps,
         dt=DT
     )
@@ -188,9 +196,9 @@ def generate_stable_landing_scenario(num_steps=500):
 
 def generate_gusty_landing_scenario(num_steps=500):
     """Challenging: moderate altitude, significant wind gusts."""
-    altitude, velocity, wind, thrust, thrust_adj = simulate_landing(
+    altitude, velocity, wind, thrust, thrust_adj, _ = simulate_landing(
         initial_altitude=35.0,
-        controller_fn=smart_controller,
+        controller_fn=safety_pd_controller,
         num_steps=num_steps,
         dt=DT
     )
@@ -198,25 +206,24 @@ def generate_gusty_landing_scenario(num_steps=500):
 
 
 def generate_low_altitude_recovery_scenario(num_steps=500):
-    """Emergency: very low altitude, high wind, must recover."""
-    altitude, velocity, wind, thrust, thrust_adj = simulate_landing(
-        initial_altitude=10.0,
-        controller_fn=smart_controller,
+    """Emergency: low altitude with non-zero initial velocity (near-crash recovery)."""
+    initial_vel = np.random.uniform(2.0, 5.0)  # start with some descent speed
+    altitude, velocity, wind, thrust, thrust_adj, _ = simulate_landing(
+        initial_altitude=np.random.uniform(5.0, 15.0),
+        controller_fn=safety_pd_controller,
         num_steps=num_steps,
-        dt=DT
+        dt=DT,
+        initial_velocity=initial_vel,
     )
     return altitude, velocity, wind, thrust_adj
 
 
 def generate_random_scenario(num_steps=500):
-    """Randomized: random initial alt, random controller selection."""
-    initial_alt = np.random.uniform(15, 50)
-    controllers = [naive_controller, pd_controller, smart_controller]
-    controller = np.random.choice(controllers)
-    
-    altitude, velocity, wind, thrust, thrust_adj = simulate_landing(
+    """Randomised: random initial altitude with safety controller."""
+    initial_alt = np.random.uniform(10, 50)
+    altitude, velocity, wind, thrust, thrust_adj, _ = simulate_landing(
         initial_altitude=initial_alt,
-        controller_fn=controller,
+        controller_fn=safety_pd_controller,
         num_steps=num_steps,
         dt=DT
     )
@@ -249,6 +256,7 @@ def generate_dataset(num_rows=10000, output_file='dataset.csv'):
         generate_stable_landing_scenario,
         generate_gusty_landing_scenario,
         generate_low_altitude_recovery_scenario,
+        generate_low_altitude_recovery_scenario,  # double weight for near-crash coverage
         generate_random_scenario,
     ]
     
@@ -259,9 +267,12 @@ def generate_dataset(num_rows=10000, output_file='dataset.csv'):
         # Generate scenario with randomized length
         num_steps = np.random.randint(300, 600)
         altitude, velocity, wind, thrust_adj = scenario_type(num_steps=num_steps)
-        
-        # Add to dataset (skip final 10 steps to avoid ground artifacts)
-        for t in range(len(altitude) - 10):
+
+        # Add only in-flight rows (stop at landing, drop final 5 near-ground steps)
+        cutoff = num_steps - 5
+        for t in range(len(altitude)):
+            if altitude[t] <= 0.0 or t >= cutoff:
+                break
             data_list.append({
                 'altitude': altitude[t],
                 'velocity': velocity[t],

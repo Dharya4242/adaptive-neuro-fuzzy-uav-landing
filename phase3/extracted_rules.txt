@@ -1,0 +1,113 @@
+ANFIS EXTRACTED FUZZY RULES — UAV Landing Controller
+============================================================
+Format: Sugeno 1st-order — Thrust = w0·altitude + w1·velocity + w2·wind + bias
+============================================================
+
+Rule 01: IF Altitude=Low    AND Velocity=Low    AND Wind=Low   
+         THEN Thrust = +0.024·alt +4.189·vel +2.114·wind +19.271
+         (Low base (↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 02: IF Altitude=Low    AND Velocity=Low    AND Wind=Medium
+         THEN Thrust = +0.054·alt +0.471·vel +3.066·wind +1.220
+         (Low base (↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 03: IF Altitude=Low    AND Velocity=Low    AND Wind=High  
+         THEN Thrust = +0.038·alt +0.111·vel +0.382·wind -0.003
+         (Low base (↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 04: IF Altitude=Low    AND Velocity=Medium AND Wind=Low   
+         THEN Thrust = +2.584·alt +0.679·vel +0.950·wind +1.843
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 05: IF Altitude=Low    AND Velocity=Medium AND Wind=Medium
+         THEN Thrust = +1.660·alt +0.288·vel +2.296·wind +0.430
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 06: IF Altitude=Low    AND Velocity=Medium AND Wind=High  
+         THEN Thrust = +0.335·alt +0.001·vel +0.900·wind -0.045
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 07: IF Altitude=Low    AND Velocity=High   AND Wind=Low   
+         THEN Thrust = -1.298·alt -0.268·vel -0.125·wind +0.087
+         (Low base (↑ altitude → ↓ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↓ thrust))
+
+Rule 08: IF Altitude=Low    AND Velocity=High   AND Wind=Medium
+         THEN Thrust = -0.565·alt -0.320·vel -0.604·wind +0.125
+         (Low base (↑ altitude → ↓ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↓ thrust))
+
+Rule 09: IF Altitude=Low    AND Velocity=High   AND Wind=High  
+         THEN Thrust = -0.134·alt -0.179·vel -0.006·wind -0.137
+         (Low base (↑ altitude → ↓ thrust, ↑ velocity → ↓ thrust))
+
+Rule 10: IF Altitude=Medium AND Velocity=Low    AND Wind=Low   
+         THEN Thrust = +2.412·alt +0.124·vel +0.246·wind +1.187
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 11: IF Altitude=Medium AND Velocity=Low    AND Wind=Medium
+         THEN Thrust = +2.105·alt +0.181·vel +0.864·wind +0.181
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 12: IF Altitude=Medium AND Velocity=Low    AND Wind=High  
+         THEN Thrust = +1.582·alt -0.032·vel +0.621·wind +0.167
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 13: IF Altitude=Medium AND Velocity=Medium AND Wind=Low   
+         THEN Thrust = +1.810·alt -0.391·vel +0.346·wind +0.055
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↑ thrust))
+
+Rule 14: IF Altitude=Medium AND Velocity=Medium AND Wind=Medium
+         THEN Thrust = +1.881·alt +0.047·vel +0.255·wind +0.168
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 15: IF Altitude=Medium AND Velocity=Medium AND Wind=High  
+         THEN Thrust = +1.617·alt +0.042·vel +0.578·wind +0.144
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 16: IF Altitude=Medium AND Velocity=High   AND Wind=Low   
+         THEN Thrust = +0.747·alt -0.468·vel +0.101·wind -0.137
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↑ thrust))
+
+Rule 17: IF Altitude=Medium AND Velocity=High   AND Wind=Medium
+         THEN Thrust = +0.627·alt -0.112·vel -0.119·wind +0.125
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↓ thrust))
+
+Rule 18: IF Altitude=Medium AND Velocity=High   AND Wind=High  
+         THEN Thrust = +0.689·alt -0.120·vel +0.261·wind +0.167
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↑ thrust))
+
+Rule 19: IF Altitude=High   AND Velocity=Low    AND Wind=Low   
+         THEN Thrust = +1.146·alt +0.152·vel -0.133·wind +0.125
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↓ thrust))
+
+Rule 20: IF Altitude=High   AND Velocity=Low    AND Wind=Medium
+         THEN Thrust = +1.164·alt -0.037·vel +0.181·wind -0.162
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 21: IF Altitude=High   AND Velocity=Low    AND Wind=High  
+         THEN Thrust = +1.249·alt +0.042·vel +0.636·wind -0.012
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 22: IF Altitude=High   AND Velocity=Medium AND Wind=Low   
+         THEN Thrust = +1.117·alt +0.222·vel +0.201·wind +0.092
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 23: IF Altitude=High   AND Velocity=Medium AND Wind=Medium
+         THEN Thrust = +1.028·alt +0.287·vel +0.288·wind +0.143
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 24: IF Altitude=High   AND Velocity=Medium AND Wind=High  
+         THEN Thrust = +1.123·alt +0.091·vel +0.428·wind -0.106
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+
+Rule 25: IF Altitude=High   AND Velocity=High   AND Wind=Low   
+         THEN Thrust = +0.439·alt -0.375·vel +0.049·wind -0.010
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↓ thrust))
+
+Rule 26: IF Altitude=High   AND Velocity=High   AND Wind=Medium
+         THEN Thrust = +0.491·alt -0.457·vel -0.219·wind -0.076
+         (Low base (↑ altitude → ↑ thrust, ↑ velocity → ↓ thrust, ↑ wind → ↓ thrust))
+
+Rule 27: IF Altitude=High   AND Velocity=High   AND Wind=High  
+         THEN Thrust = +0.395·alt -0.028·vel +0.401·wind +0.031
+         (Low base (↑ altitude → ↑ thrust, ↑ wind → ↑ thrust))
+

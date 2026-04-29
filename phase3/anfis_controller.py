@@ -37,7 +37,7 @@ DATASET_PATH   = "dataset.csv"   # change if your file is elsewhere
 RANDOM_STATE   = 42
 TEST_SIZE      = 0.2             # 80/20 split → 8000 train / 2000 test
 LEARNING_RATE  = 0.005
-EPOCHS         = 150
+EPOCHS         = 300
 SAFE_VEL_THRESHOLD = 1.5        # m/s — landing velocity considered "safe"
 PID_RMSE       = 5.349093       # from Member 2 Phase 2A
 PID_MAE        = 1.938388
@@ -293,7 +293,22 @@ for epoch in range(EPOCHS):
 # Restore best params
 alt_params, vel_params, wind_params, rule_params = best_params
 print(f"\n✓ Training complete. Best val MSE: {best_val_loss:.4f}")
-
+print(f"\n✓ Training complete. Best val MSE: {best_val_loss:.4f}")
+   
+   # ← ADD PICKLE CODE HERE (AFTER restoring best params)
+import pickle
+model_params = {
+    'alt_params': alt_params,
+    'vel_params': vel_params,
+    'wind_params': wind_params,
+    'rule_params': rule_params,
+    'alt_range': (alt_min, alt_max),
+    'vel_range': (vel_min, vel_max),
+    'wind_range': (wind_min, wind_max),
+}
+with open('anfis_model.pkl', 'wb') as f:
+    pickle.dump(model_params, f)
+print("✓ anfis_model.pkl saved")
 # ─────────────────────────────────────────────
 # 6. TEST SET EVALUATION
 # ─────────────────────────────────────────────
@@ -342,8 +357,8 @@ print("COMPARISON: PID vs ANFIS")
 print("─" * 60)
 print(compare.to_string(index=False))
 
-compare.to_csv("comparison_results_updated.csv", index=False)
-print("\n✓ comparison_results_updated.csv saved")
+compare.to_csv("comparison_results.csv", index=False)
+print("\n✓ comparison_results.csv saved")
 
 # ─────────────────────────────────────────────
 # 8. RULE EXTRACTION (Sugeno-style with coefficients)
@@ -423,14 +438,14 @@ for i in range(3):
             print()
             r += 1
 
-with open("extracted_rules_updated.txt", "w") as f:
+with open("extracted_rules.txt", "w") as f:
     f.write("ANFIS EXTRACTED FUZZY RULES — UAV Landing Controller\n")
     f.write("=" * 60 + "\n")
     f.write("Format: Sugeno 1st-order — Thrust = w0·altitude + w1·velocity + w2·wind + bias\n")
     f.write("=" * 60 + "\n\n")
     for rule in rules_text:
         f.write(rule + "\n\n")
-print("✓ extracted_rules_updated.txt saved (with Sugeno coefficients)")
+print("✓ extracted_rules.txt saved (with Sugeno coefficients)")
 
 # ─────────────────────────────────────────────
 # 9. PLOTS
@@ -507,8 +522,8 @@ ax7.set_ylabel("Thrust Adjustment (%)")
 ax7.legend()
 ax7.grid(True, alpha=0.3)
 
-plt.savefig("phase2b_results_updated.png", dpi=150, bbox_inches="tight")
-print("✓ phase2b_results_updated.png saved")
+plt.savefig("phase2b_results.png", dpi=150, bbox_inches="tight")
+print("✓ phase2b_results.png saved")
 
 # ── Plot 8: Comparison bar chart ────────────
 fig2, axes = plt.subplots(1, 3, figsize=(12, 4))
@@ -529,8 +544,8 @@ for ax, (title, vals), bcolors in zip(axes, metrics, bar_colors):
     ax.set_ylim(min(0, min(vals)) * 1.3, max(vals) * 1.4)
 
 plt.tight_layout()
-plt.savefig("comparison_chart_updated.png", dpi=150, bbox_inches="tight")
-print("✓ comparison_chart_updated.png saved")
+plt.savefig("comparison_chart.png", dpi=150, bbox_inches="tight")
+print("✓ comparison_chart.png saved")
 
 # ─────────────────────────────────────────────
 # 10. SAVE FULL RESULTS SUMMARY
@@ -549,36 +564,19 @@ summary = {
     "note": (
         "ANFIS learns non-linear wind-altitude-velocity interactions. "
         "Tuned Gaussian MFs adapt premise parameters via backprop. "
-        "27 Sugeno rules extracted and saved to extracted_rules_updated.txt."
+        "27 Sugeno rules extracted and saved to extracted_rules.txt."
     )
 }
-pd.DataFrame([summary]).to_csv("phase2b_summary_updated.csv", index=False)
-print("✓ phase2b_summary_updated.csv saved")
+pd.DataFrame([summary]).to_csv("phase2b_summary.csv", index=False)
+print("✓ phase2b_summary.csv saved")
 
 print("\n" + "=" * 60)
 print("PHASE 2B COMPLETE")
 print("=" * 60)
 print("\nFiles generated:")
-print("  phase2b_results_updated.png    — training curves, MFs, prediction plots")
-print("  comparison_chart_updated.png   — PID vs ANFIS bar chart")
-print("  comparison_results_updated.csv — metrics comparison table")
-print("  extracted_rules_updated.txt    — 27 human-readable IF-THEN rules")
-print("  phase2b_summary_updated.csv    — single-row results for Phase 3")
+print("  phase2b_results.png    — training curves, MFs, prediction plots")
+print("  comparison_chart.png   — PID vs ANFIS bar chart")
+print("  comparison_results.csv — metrics comparison table")
+print("  extracted_rules.txt    — 27 human-readable IF-THEN rules")
+print("  phase2b_summary.csv    — single-row results for Phase 3")
 print()
-# Save trained model parameters
-import pickle
-
-model_params = {
-    'alt_params': alt_params,
-    'vel_params': vel_params,
-    'wind_params': wind_params,
-    'rule_params': rule_params,
-    'alt_range': (alt_min, alt_max),
-    'vel_range': (vel_min, vel_max),
-    'wind_range': (wind_min, wind_max),
-}
-
-with open('anfis_model.pkl', 'wb') as f:
-    pickle.dump(model_params, f)
-
-print("✓ ANFIS model saved to anfis_model.pkl")

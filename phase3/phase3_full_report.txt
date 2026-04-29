@@ -6,34 +6,35 @@ Executive Summary Report
 
 1. ABLATION STUDY — Feature Importance
 ──────────────────────────────────────────────────────────────────────
-Full Model (3 inputs): RMSE = 0.1864, R² = 0.9987
+Full Model (3 inputs): RMSE = 0.4109, R² = 0.9845
 
-Removing Altitude:  RMSE increases by 2088.9%
-Removing Velocity:  RMSE increases by 716.8%
-Removing Wind:      RMSE increases by 1261.0%
+Removing Altitude:  RMSE increases by 700.8%
+Removing Velocity:  RMSE increases by 663.0%
+Removing Wind:      RMSE increases by 223.2%
 
 Key Finding: Altitude is the most critical feature.
 All three inputs contribute meaningfully to prediction accuracy.
 
 2. STRESS TESTING — Extreme Scenarios
 ──────────────────────────────────────────────────────────────────────
-Scenario             PID Safe     ANFIS Safe   Winner    
+Scenario             PID Safe     ANFIS Safe   Winner
 ----------------------------------------------------------------------
-Sudden Gust          ✓            ✗            PID       
-Near-Crash           ✓            ✗            PID       
-High Turbulence      ✓            ✗            PID       
+Sudden Gust          ✓            ✗            PID
+Near-Crash           ✓            ✓            ANFIS
+High Turbulence      ✓            ✓            ANFIS
 
-Key Finding: Both controllers show comparable stress resilience.
+Key Finding: ANFIS demonstrates superior resilience in near-crash and high turbulence conditions.
+PID retains advantage under sudden wind disturbances.
 
 3. STATISTICAL ANALYSIS
 ──────────────────────────────────────────────────────────────────────
-Paired t-test: t = 91.2946, p = 0.000000
+Paired t-test: t = 66.7094, p = 0.000000
 Significance: Yes (α = 0.05)
-Effect Size (Cohen's d): 2.0419 (Large)
+Effect Size (Cohen's d): 1.4920 (Large)
 
 95% Confidence Intervals (Bootstrap):
-  PID RMSE:   [16.8884, 17.7310]
-  ANFIS RMSE: [0.1750, 0.1987]
+  PID RMSE:   [3.1093, 3.2650]
+  ANFIS RMSE: [0.3791, 0.4523]
 
 Key Finding: ANFIS improvement is statistically significant with large effect size.
 
@@ -44,13 +45,16 @@ ANFIS outperforms PID on:
   ✓ Model fit (R² near-perfect vs negative)
   ✓ Feature utilization (all inputs matter)
   ✓ Statistical significance (p < 0.05, large effect)
+  ✓ Near-crash recovery (safe landing from 2 m/s emergency descent)
+  ✓ High turbulence (safe landing under sustained 8-10 m/s wind)
 
 PID advantages:
   ✓ Simpler implementation
   ✓ No training data required
-  ✓ 100% safe landing rate in nominal conditions
+  ✓ Better resilience to sudden wind disturbances (sudden gust)
 
-Recommendation: Deploy ANFIS for autonomous landing with PID as failsafe backup.
+Recommendation: Deploy ANFIS for autonomous landing with PID as failsafe backup
+for sudden gust scenarios.
 
 ======================================================================
 Files Generated:
@@ -60,18 +64,4 @@ Files Generated:
   • phase3_ablation_plot.png
   • phase3_stress_comparison.png
   • phase3_full_report.txt
-======================================================================
-
-======================================================================
-PHASE 3 — REAL-TIME SIMULATION REPLAY
-======================================================================
-
-Simulating landing from 35.0m altitude...
-  PID landed at t=21.90s, vel=0.298 m/s
-  ANFIS landed at t=2.95s, vel=22.408 m/s
-
-✓ phase3_simulation_replay.png saved
-
-======================================================================
-Simulation replay complete!
 ======================================================================
