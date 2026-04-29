@@ -1,0 +1,3 @@
+Controller,RMSE,MAE,R²,Safe Landing %
+PID (Baseline),5.349093,1.938388,-0.077548,100.0
+ANFIS (Phase 2B),0.523768,0.297628,0.965592,100.0

@@ -1,0 +1,4 @@
+scenario,description,pid_safe,anfis_safe,pid_final_vel,anfis_final_vel,pid_max_vel,anfis_max_vel
+Sudden Gust,10 m/s spike at t=10s,True,False,0.2957098342790374,0.7368473408132589,4.878221773880137,4.764567213343758
+Near-Crash,2 m/s descent at 5m alt,True,True,0.28492364023088207,0.4273851992634120,2.0,2.0
+High Turbulence,Sustained 8-10 m/s wind,True,True,0.32466659443523943,0.3812445067234190,5.782178508974596,5.8579077681384675
